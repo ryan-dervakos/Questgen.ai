@@ -37,14 +37,14 @@ class QGen:
     def __init__(self):
         
         
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
         model = T5ForConditionalGeneration.from_pretrained('Parth/result')
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         # model.eval()
         self.device = device
         self.model = model
-        self.nlp = spacy.load('en_core_web_sm')
+        self.nlp = spacy.load('en_core_web_md')
 
         self.s2v = Sense2Vec().from_disk('s2v_old')
 
@@ -62,7 +62,7 @@ class QGen:
         start = time.time()
         inp = {
             "input_text": payload.get("input_text"),
-            "max_questions": payload.get("max_questions", 4)
+            "max_questions": payload.get("max_questions", 10)
         }
 
         text = inp['input_text']
@@ -72,7 +72,6 @@ class QGen:
 
 
         keywords = get_keywords(self.nlp,modified_text,inp['max_questions'],self.s2v,self.fdist,self.normalized_levenshtein,len(sentences) )
-
 
         keyword_sentence_mapping = get_sentences_for_keyword(keywords, sentences)
 

@@ -23,6 +23,8 @@ from nltk.corpus import brown
 from similarity.normalized_levenshtein import NormalizedLevenshtein
 from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
+from keybert import KeyBERT
+
 
 def MCQs_available(word,s2v):
     word = word.replace(" ", "_")
@@ -147,8 +149,8 @@ def get_nouns_multipartite(text):
     out = []
 
     extractor = pke.unsupervised.MultipartiteRank()
+    pos = {'NOUN', 'PROPN'}
     extractor.load_document(input=text, language='en')
-    pos = {'PROPN', 'NOUN'}
     stoplist = list(string.punctuation)
     stoplist += stopwords.words('english')
     extractor.candidate_selection(pos=pos)
@@ -157,7 +159,7 @@ def get_nouns_multipartite(text):
     #    threshold/method parameters.
     try:
         extractor.candidate_weighting(alpha=1.1,
-                                      threshold=0.75,
+                                      threshold=0.74,
                                       method='average')
     except:
         return out
@@ -183,34 +185,72 @@ def get_phrases(doc):
 
     phrase_keys=list(phrases.keys())
     phrase_keys = sorted(phrase_keys, key= lambda x: len(x),reverse=True)
-    phrase_keys=phrase_keys[:50]
+    phrase_keys=phrase_keys[:]
     return phrase_keys
 
 
 
 def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_sentences):
     doc = nlp(text)
-    max_keywords = int(max_keywords)
+    # max_keywords = int(max_keywords)
+    max_keywords = 20
+    kw_model = KeyBERT('all-mpnet-base-v2')
 
-    keywords = get_nouns_multipartite(text)
-    keywords = sorted(keywords, key=lambda x: fdist[x])
+    # keywords = get_nouns_multipartite(text)
+    keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 1), top_n=max_keywords)
+    keywords = sorted(keywords, key=lambda x: -x[1])
+    # keywords = extract_keywords_topicrank(text)
+    # keywords = sorted(keywords, key=lambda x: fdist[x])
+    keywords = [k[0] for k in keywords]
+    print(keywords)
+    print("======")
     keywords = filter_phrases(keywords, max_keywords,normalized_levenshtein )
-
     phrase_keys = get_phrases(doc)
+
     filtered_phrases = filter_phrases(phrase_keys, max_keywords,normalized_levenshtein )
 
     total_phrases = keywords + filtered_phrases
 
     total_phrases_filtered = filter_phrases(total_phrases, min(max_keywords, 2*no_of_sentences),normalized_levenshtein )
-
-
+    print(total_phrases_filtered)
+    print("======")
     answers = []
     for answer in total_phrases_filtered:
         if answer not in answers and MCQs_available(answer,s2v):
             answers.append(answer)
 
     answers = answers[:max_keywords]
+    print(answers)
+    print("======")
     return answers
+
+
+def extract_keywords_topicrank(text):
+    # define the set of valid Part-of-Speeches
+    pos = {'NOUN', 'PROPN', 'ADJ'}
+
+    # 1. create a SingleRank extractor.
+    extractor = pke.unsupervised.SingleRank()
+
+    # 2. load the content of the document.
+    extractor.load_document(input=text,
+                            language='en',
+                            normalization=None)
+
+    # 3. select the longest sequences of nouns and adjectives as candidates.
+    extractor.candidate_selection(pos=pos)
+
+    # 4. weight the candidates using the sum of their word's scores that are
+    #    computed using random walk. In the graph, nodes are words of
+    #    certain part-of-speech (nouns and adjectives) that are connected if
+    #    they occur in a window of 10 words.
+    extractor.candidate_weighting(window=3,
+                                pos=pos)
+
+    # 5. get the 10-highest scored candidates as keyphrases
+    keyphrases = extractor.get_n_best(n=10)
+
+    return keyphrases
 
 
 def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec,normalized_levenshtein):
@@ -235,12 +275,11 @@ def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec
 
     output_array ={}
     output_array["questions"] =[]
-#     print(outs)
+
     for index, val in enumerate(answers):
         individual_question ={}
         out = outs[index, :]
         dec = tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True)
-
         Question = dec.replace("question:", "")
         Question = Question.strip()
         individual_question["question_statement"] = Question
