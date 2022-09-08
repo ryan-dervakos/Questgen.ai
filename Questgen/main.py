@@ -41,7 +41,6 @@ class QGen:
         model = T5ForConditionalGeneration.from_pretrained('Parth/result')
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
-        # model.eval()
         self.device = device
         self.model = model
         self.nlp = spacy.load('en_core_web_md')
@@ -143,7 +142,6 @@ class QGen:
             
   
     def paraphrase(self,payload):
-        start = time.time()
         inp = {
             "input_text": payload.get("input_text"),
             "max_questions": payload.get("max_questions", 3)
@@ -168,10 +166,6 @@ class QGen:
             early_stopping=True
             )
 
-#         print ("\nOriginal Question ::")
-#         print (text)
-#         print ("\n")
-#         print ("Paraphrased Questions :: ")
         final_outputs =[]
         for beam_output in beam_outputs:
             sent = self.tokenizer.decode(beam_output, skip_special_tokens=True,clean_up_tokenization_spaces=True)
@@ -199,7 +193,6 @@ class BoolQGen:
         model = T5ForConditionalGeneration.from_pretrained('ramsrigouthamg/t5_boolean_questions')
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
-        # model.eval()
         self.device = device
         self.model = model
         self.set_seed(42)
@@ -216,7 +209,6 @@ class BoolQGen:
     
 
     def predict_boolq(self,payload):
-        start = time.time()
         inp = {
             "input_text": payload.get("input_text"),
             "max_questions": payload.get("max_questions", 4)
@@ -251,7 +243,6 @@ class AnswerPredictor:
         model = T5ForConditionalGeneration.from_pretrained('Parth/boolean')
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
-        # model.eval()
         self.device = device
         self.model = model
         self.set_seed(42)
@@ -268,7 +259,6 @@ class AnswerPredictor:
         return Question.strip().capitalize()
 
     def predict_answer(self,payload):
-        start = time.time()
         inp = {
             "input_text": payload.get("input_text"),
             "input_question" : payload.get("input_question")

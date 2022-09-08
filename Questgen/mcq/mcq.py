@@ -1,26 +1,13 @@
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import time
 import torch
-from transformers import T5ForConditionalGeneration,T5Tokenizer
 import random
-import spacy
-import zipfile
-import os
-import json
-from sense2vec import Sense2Vec
-import requests
 from collections import OrderedDict
 import string
 import pke
 import nltk
-from nltk import FreqDist
 nltk.download('brown')
 nltk.download('stopwords')
 nltk.download('popular')
 from nltk.corpus import stopwords
-from nltk.corpus import brown
-from similarity.normalized_levenshtein import NormalizedLevenshtein
 from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
 from keybert import KeyBERT
@@ -192,15 +179,11 @@ def get_phrases(doc):
 
 def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_sentences):
     doc = nlp(text)
-    # max_keywords = int(max_keywords)
     max_keywords = 20
     kw_model = KeyBERT('all-mpnet-base-v2')
 
-    # keywords = get_nouns_multipartite(text)
     keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 1), top_n=max_keywords)
     keywords = sorted(keywords, key=lambda x: -x[1])
-    # keywords = extract_keywords_topicrank(text)
-    # keywords = sorted(keywords, key=lambda x: fdist[x])
     keywords = [k[0] for k in keywords]
     print(keywords)
     print("======")
@@ -223,35 +206,6 @@ def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_se
     print(answers)
     print("======")
     return answers
-
-
-def extract_keywords_topicrank(text):
-    # define the set of valid Part-of-Speeches
-    pos = {'NOUN', 'PROPN', 'ADJ'}
-
-    # 1. create a SingleRank extractor.
-    extractor = pke.unsupervised.SingleRank()
-
-    # 2. load the content of the document.
-    extractor.load_document(input=text,
-                            language='en',
-                            normalization=None)
-
-    # 3. select the longest sequences of nouns and adjectives as candidates.
-    extractor.candidate_selection(pos=pos)
-
-    # 4. weight the candidates using the sum of their word's scores that are
-    #    computed using random walk. In the graph, nodes are words of
-    #    certain part-of-speech (nouns and adjectives) that are connected if
-    #    they occur in a window of 10 words.
-    extractor.candidate_weighting(window=3,
-                                pos=pos)
-
-    # 5. get the 10-highest scored candidates as keyphrases
-    keyphrases = extractor.get_n_best(n=10)
-
-    return keyphrases
-
 
 def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec,normalized_levenshtein):
     batch_text = []
