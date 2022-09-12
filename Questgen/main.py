@@ -33,15 +33,20 @@ from Questgen.mcq.mcq import generate_normal_questions
 import time
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-
+DEV_MODE = os.getenv['DEV_MODE']
 
 class QGen:
     
     def __init__(self):
 
-        self.tokenizer = AutoTokenizer.from_pretrained("mrm8488/t5-base-finetuned-question-generation-ap")
+        if DEV_MODE:
+            self.tokenizer = AutoTokenizer.from_pretrained("mrm8488/t5-base-finetuned-question-generation-ap")
 
-        model = AutoModelForSeq2SeqLM.from_pretrained("mrm8488/t5-base-finetuned-question-generation-ap")
+            model = AutoModelForSeq2SeqLM.from_pretrained("mrm8488/t5-base-finetuned-question-generation-ap")
+        else: 
+            self.tokenizer = AutoTokenizer.from_pretrained("/var/task/mrm8488/t5-base-finetuned-question-generation-ap")
+
+            model = AutoModelForSeq2SeqLM.from_pretrained("/var/task/mrm8488/t5-base-finetuned-question-generation-ap")
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
@@ -192,8 +197,14 @@ class QGen:
 class BoolQGen:
        
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        model = T5ForConditionalGeneration.from_pretrained('ramsrigouthamg/t5_boolean_questions')
+
+        if DEV_MODE:
+            self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
+            model = T5ForConditionalGeneration.from_pretrained('ramsrigouthamg/t5_boolean_questions')
+        else: 
+            self.tokenizer = T5Tokenizer.from_pretrained('/var/task/t5-base')
+            model = T5ForConditionalGeneration.from_pretrained('/var/task/ramsrigouthamg/t5_boolean_questions')   
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         self.device = device
@@ -242,8 +253,14 @@ class BoolQGen:
 class AnswerPredictor:
           
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        model = T5ForConditionalGeneration.from_pretrained('Parth/boolean')
+
+        if DEV_MODE:
+            self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
+            model = T5ForConditionalGeneration.from_pretrained('Parth/boolean')
+        else:
+            self.tokenizer = T5Tokenizer.from_pretrained('/var/task/t5-base')
+            model = T5ForConditionalGeneration.from_pretrained('/var/task/Parth/boolean')
+            
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         self.device = device
