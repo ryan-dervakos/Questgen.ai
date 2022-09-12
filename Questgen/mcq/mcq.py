@@ -11,15 +11,47 @@ from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
 from keybert import KeyBERT
+import os
+import openai
+import pandas as pd
+import csv
 
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def MCQs_available(word,s2v):
     word = word.replace(" ", "_")
     sense = s2v.get_best_sense(word)
+    
     if sense is not None:
         return True
     else:
         return False
+
+def get_distractors(context, word):
+    print('generate distractors')
+    prompt = "Question:"+context+"\n\nAnswer:"+word+"\n\nList wrong choices:"
+    response = openai.Completion.create(
+        model="text-curie-001",
+        prompt=prompt,
+        temperature=0.3,
+        max_tokens=60,
+        top_p=1,
+        frequency_penalty=0.8,
+        presence_penalty=0
+    )
+
+    distractors = response.choices[0].text
+    
+    distractors_list = distractors.splitlines()
+
+    while ("" in distractors_list):
+        distractors_list.remove("")
+    
+    distractors_list = (list(OrderedDict.fromkeys(distractors_list)))
+
+    return distractors_list
+
 
 
 def edits(word):
@@ -151,7 +183,7 @@ def get_nouns_multipartite(text):
     except:
         return out
 
-    keyphrases = extractor.get_n_best(n=10)
+    keyphrases = extractor.get_n_best(n=20)
 
     for key in keyphrases:
         out.append(key[0])
@@ -182,29 +214,25 @@ def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_se
     max_keywords = 20
     kw_model = KeyBERT('all-mpnet-base-v2')
 
-    keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 1), top_n=max_keywords)
+    keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 1), top_n=max_keywords, nr_candidates=10, stop_words='english')
     keywords = sorted(keywords, key=lambda x: -x[1])
     keywords = [k[0] for k in keywords]
-    print(keywords)
-    print("======")
     keywords = filter_phrases(keywords, max_keywords,normalized_levenshtein )
     phrase_keys = get_phrases(doc)
+
 
     filtered_phrases = filter_phrases(phrase_keys, max_keywords,normalized_levenshtein )
 
     total_phrases = keywords + filtered_phrases
 
     total_phrases_filtered = filter_phrases(total_phrases, min(max_keywords, 2*no_of_sentences),normalized_levenshtein )
-    print(total_phrases_filtered)
-    print("======")
     answers = []
     for answer in total_phrases_filtered:
-        if answer not in answers and MCQs_available(answer,s2v):
+        # if answer not in answers and MCQs_available(answer,s2v):
+        if answer not in answers:    
             answers.append(answer)
 
     answers = answers[:max_keywords]
-    print(answers)
-    print("======")
     return answers
 
 def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec,normalized_levenshtein):
@@ -213,9 +241,10 @@ def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec
     for answer in answers:
         txt = keyword_sent_mapping[answer]
         context = "context: " + txt
-        text = context + " " + "answer: " + answer + " </s>"
+        # text = context + " " + "answer: " + answer + " </s>"
+        text = "answer: " + answer + " " + context
         batch_text.append(text)
-
+    
     encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
 
 
@@ -240,14 +269,11 @@ def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec
         individual_question["question_type"] = "MCQ"
         individual_question["answer"] = val
         individual_question["id"] = index+1
-        individual_question["options"], individual_question["options_algorithm"] = get_options(val, sense2vec)
-
-        individual_question["options"] =  filter_phrases(individual_question["options"], 10,normalized_levenshtein)
+        individual_question["options"] = get_distractors(Question, val)
+        # individual_question["options"] =  filter_phrases(individual_question["options"], 10,normalized_levenshtein)
         index = 3
-        individual_question["extra_options"]= individual_question["options"][index:]
-        individual_question["options"] = individual_question["options"][:index]
         individual_question["context"] = keyword_sent_mapping[val]
-     
+
         if len(individual_question["options"])>0:
             output_array["questions"].append(individual_question)
 
