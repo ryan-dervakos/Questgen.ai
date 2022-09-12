@@ -16,9 +16,9 @@ import pke
 import nltk
 import numpy 
 from nltk import FreqDist
-# nltk.download('brown')
-# nltk.download('stopwords')
-# nltk.download('popular')
+nltk.download('brown')
+nltk.download('stopwords')
+nltk.download('popular')
 from nltk.corpus import stopwords
 from nltk.corpus import brown
 from similarity.normalized_levenshtein import NormalizedLevenshtein
@@ -38,11 +38,6 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 class QGen:
     
     def __init__(self):
-        
-        
-        # self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-
-        # model = T5ForConditionalGeneration.from_pretrained('Parth/result')
 
         self.tokenizer = AutoTokenizer.from_pretrained("mrm8488/t5-base-finetuned-question-generation-ap")
 
