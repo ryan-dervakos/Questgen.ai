@@ -5,20 +5,14 @@ import torch
 from transformers import T5ForConditionalGeneration,T5Tokenizer
 import random
 import spacy
-import zipfile
 import os
-import json
 from sense2vec import Sense2Vec
 import requests
 from collections import OrderedDict
 import string
-import pke
 import nltk
 import numpy 
 from nltk import FreqDist
-nltk.download('brown')
-nltk.download('stopwords')
-nltk.download('popular')
 from nltk.corpus import stopwords
 from nltk.corpus import brown
 from similarity.normalized_levenshtein import NormalizedLevenshtein
@@ -260,7 +254,7 @@ class AnswerPredictor:
         else:
             self.tokenizer = T5Tokenizer.from_pretrained('/var/task/t5-base')
             model = T5ForConditionalGeneration.from_pretrained('/var/task/Parth/boolean')
-            
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         self.device = device

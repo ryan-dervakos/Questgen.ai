@@ -2,19 +2,13 @@ import torch
 import random
 from collections import OrderedDict
 import string
-import pke
 import nltk
-nltk.download('brown')
-nltk.download('stopwords')
-nltk.download('popular')
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
 from keybert import KeyBERT
 import os
 import openai
-import pandas as pd
-import csv
 
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -164,33 +158,6 @@ def filter_phrases(phrase_keys,max,normalized_levenshtein ):
     return filtered_phrases
 
 
-def get_nouns_multipartite(text):
-    out = []
-
-    extractor = pke.unsupervised.MultipartiteRank()
-    pos = {'NOUN', 'PROPN'}
-    extractor.load_document(input=text, language='en')
-    stoplist = list(string.punctuation)
-    stoplist += stopwords.words('english')
-    extractor.candidate_selection(pos=pos)
-    # 4. build the Multipartite graph and rank candidates using random walk,
-    #    alpha controls the weight adjustment mechanism, see TopicRank for
-    #    threshold/method parameters.
-    try:
-        extractor.candidate_weighting(alpha=1.1,
-                                      threshold=0.74,
-                                      method='average')
-    except:
-        return out
-
-    keyphrases = extractor.get_n_best(n=20)
-
-    for key in keyphrases:
-        out.append(key[0])
-
-    return out
-
-
 def get_phrases(doc):
     phrases={}
     for np in doc.noun_chunks:
@@ -219,7 +186,6 @@ def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_se
     keywords = [k[0] for k in keywords]
     keywords = filter_phrases(keywords, max_keywords,normalized_levenshtein )
     phrase_keys = get_phrases(doc)
-
 
     filtered_phrases = filter_phrases(phrase_keys, max_keywords,normalized_levenshtein )
 
