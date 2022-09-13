@@ -27,7 +27,7 @@ from Questgen.mcq.mcq import generate_normal_questions
 import time
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-DEV_MODE = os.getenv['DEV_MODE']
+DEV_MODE = os.getenv('DEV_MODE')
 
 class QGen:
     
