@@ -15,8 +15,6 @@ import time
 openai.api_key = os.getenv("OPENAI_API_KEY")
 DEV_MODE = int(os.getenv('DEV_MODE'))
 
-DEV_MODE = int(os.getenv('DEV_MODE'))
-
 
 def MCQs_available(word,s2v):
     word = word.replace(" ", "_")
