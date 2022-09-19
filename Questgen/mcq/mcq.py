@@ -13,6 +13,7 @@ import time
 
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+DEV_MODE = int(os.getenv('DEV_MODE'))
 
 DEV_MODE = int(os.getenv('DEV_MODE'))
 
@@ -195,6 +196,11 @@ def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_se
     doc = nlp(text)
     max_keywords = 10
     kw_model = KeyBERT('all-mpnet-base-v2')
+
+    if DEV_MODE:
+        kw_model = KeyBERT('all-mpnet-base-v2')
+    else:
+        kw_model = KeyBERT('/var/task/all-mpnet-base-v2')
 
     keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 1), top_n=max_keywords, nr_candidates=10, stop_words='english')
     keywords = sorted(keywords, key=lambda x: -x[1])
