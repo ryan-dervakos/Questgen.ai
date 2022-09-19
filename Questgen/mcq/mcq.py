@@ -28,26 +28,26 @@ def MCQs_available(word,s2v):
 def get_distractors(context, word):
     print('generate distractors')
     prompt = "Question:"+context+"\n\nAnswer:"+word+"\n\nList wrong choices: \n\n- "
-    response = openai.Completion.create(
-        model="text-curie-001",
-        prompt=prompt,
-        temperature=0.3,
-        max_tokens=60,
-        top_p=1,
-        frequency_penalty=0.8,
-        presence_penalty=0
-    )
-
     # response = openai.Completion.create(
-    #     model="text-davinci-002",
+    #     model="text-curie-001",
     #     prompt=prompt,
-    #     suffix="",
-    #     temperature=0.7,
-    #     max_tokens=256,
+    #     temperature=0.3,
+    #     max_tokens=60,
     #     top_p=1,
-    #     frequency_penalty=0,
+    #     frequency_penalty=0.8,
     #     presence_penalty=0
-    # )    
+    # )
+
+    response = openai.Completion.create(
+        model="text-davinci-002",
+        prompt=prompt,
+        suffix="",
+        temperature=0.7,
+        max_tokens=256,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
+    )    
 
     distractors = response.choices[0].text
     
