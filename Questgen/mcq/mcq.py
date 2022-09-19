@@ -9,9 +9,13 @@ from flashtext import KeywordProcessor
 from keybert import KeyBERT
 import os
 import openai
+import time
 
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+DEV_MODE = int(os.getenv('DEV_MODE'))
+
 
 def MCQs_available(word,s2v):
     word = word.replace(" ", "_")
@@ -24,7 +28,7 @@ def MCQs_available(word,s2v):
 
 def get_distractors(context, word):
     print('generate distractors')
-    prompt = "Question:"+context+"\n\nAnswer:"+word+"\n\nList wrong choices:"
+    prompt = "Question:"+context+"\n\nAnswer:"+word+"\n\nList wrong choices: \n\n- "
     response = openai.Completion.create(
         model="text-curie-001",
         prompt=prompt,
@@ -34,6 +38,17 @@ def get_distractors(context, word):
         frequency_penalty=0.8,
         presence_penalty=0
     )
+
+    # response = openai.Completion.create(
+    #     model="text-davinci-002",
+    #     prompt=prompt,
+    #     suffix="",
+    #     temperature=0.7,
+    #     max_tokens=256,
+    #     top_p=1,
+    #     frequency_penalty=0,
+    #     presence_penalty=0
+    # )    
 
     distractors = response.choices[0].text
     
@@ -178,7 +193,7 @@ def get_phrases(doc):
 
 def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_sentences):
     doc = nlp(text)
-    max_keywords = 20
+    max_keywords = 10
     kw_model = KeyBERT('all-mpnet-base-v2')
 
     keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 1), top_n=max_keywords, nr_candidates=10, stop_words='english')
@@ -212,7 +227,6 @@ def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec
         batch_text.append(text)
     
     encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
 
     print ("Running model for generation")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
@@ -255,7 +269,6 @@ def generate_normal_questions(keyword_sent_mapping,device,tokenizer,model):  #fo
         batch_text.append(text)
 
     encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
 
     print ("Running model for generation")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)

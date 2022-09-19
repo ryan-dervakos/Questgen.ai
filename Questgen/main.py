@@ -27,7 +27,7 @@ from Questgen.mcq.mcq import generate_normal_questions
 import time
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-DEV_MODE = os.getenv('DEV_MODE')
+DEV_MODE = int(os.getenv('DEV_MODE'))
 
 class QGen:
     
@@ -48,7 +48,8 @@ class QGen:
         self.model = model
         self.nlp = spacy.load('en_core_web_md')
 
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        # self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = ''
 
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
@@ -82,7 +83,6 @@ class QGen:
 
    
         final_output = {}
-
         if len(keyword_sentence_mapping.keys()) == 0:
             return final_output
         else:
