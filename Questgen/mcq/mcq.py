@@ -14,6 +14,7 @@ import time
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 DEV_MODE = int(os.getenv('DEV_MODE'))
+DAVINCI_MODEL = 1
 
 
 def MCQs_available(word,s2v):
@@ -28,18 +29,15 @@ def MCQs_available(word,s2v):
 def get_distractors(context, word):
     print('generate distractors')
     prompt = "Question:"+context+"\n\nAnswer:"+word+"\n\nList wrong choices: \n\n- "
-    # response = openai.Completion.create(
-    #     model="text-curie-001",
-    #     prompt=prompt,
-    #     temperature=0.3,
-    #     max_tokens=60,
-    #     top_p=1,
-    #     frequency_penalty=0.8,
-    #     presence_penalty=0
-    # )
+    
+    model = ""
+    if DAVINCI_MODEL == 1:
+        model = "text-davinci-002"
+    else:
+        model = "text-curie-001"
 
     response = openai.Completion.create(
-        model="text-davinci-002",
+        model=model,
         prompt=prompt,
         suffix="",
         temperature=0.7,

@@ -23,4 +23,11 @@ def lambda_handler(event, context):
             'boolean' : qgen.predict_shortq(body)
         }
         
-    return return_value            
+    return {
+        "isBase64Encoded": False,
+        "statusCode": 200,
+        "headers": {'Access-Control-Allow-Headers': 'Content-Type',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'OPTIONS,POST'},
+        "body": json.dumps(return_value)
+    }            
